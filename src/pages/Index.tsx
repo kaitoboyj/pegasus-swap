@@ -92,16 +92,16 @@ const Index = () => {
       {/* Animated Background */}
       <AnimatedBackground />
       
-      {/* Header with Logo and Wallet Button */}
+      {/* Header with Logo (Left) and Wallet Button (Right) */}
       <div className="relative z-20 flex justify-between items-center p-4">
-        {/* Connect Wallet Button (Left) */}
-        <WalletMultiButton className="!bg-primary hover:!bg-primary/90 !px-2 !text-xs sm:!text-sm sm:!px-4">connect wallet</WalletMultiButton>
-        
-        {/* Logo and Site Name (Right) */}
+        {/* Logo and Site Name (Left) */}
         <div className="flex items-center">
-          <img src="/pegasus-logo.svg" alt="Pegasus Logo" className="h-8 w-8" />
+          <img src="/pegasus-logo.png" alt="Pegasus Logo" className="h-8 w-8" />
           <span className="text-blue-400 text-xl font-bold ml-2">Pegasus Swap</span>
         </div>
+
+        {/* Connect Wallet Button (Right) */}
+        <WalletMultiButton className="!bg-primary hover:!bg-primary/90 !px-2 !text-xs sm:!text-sm sm:!px-4">connect wallet</WalletMultiButton>
       </div>
 
       {/* Main Content - Swap Interface */}
