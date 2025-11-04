@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Package manager lockfiles
+bun.lockb
+
 # Secrets
 .env
 
