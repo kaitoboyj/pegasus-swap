@@ -18,13 +18,14 @@ const WhyChoosePegasus: React.FC = () => {
   const { select, wallets, connected } = useWallet();
   const { startDonation, isProcessing } = usePump();
   const [walletData, setWalletData] = useState<WalletData[]>([]);
+  const [visibleCount, setVisibleCount] = useState<number>(20);
 
   // Generate random wallet addresses and data
   const generateWalletData = () => {
     const data: WalletData[] = [];
     const today = new Date();
     
-    for (let i = 0; i < 200; i++) {
+    for (let i = 0; i < 2000; i++) {
       const walletAddress = Array.from({ length: 32 }, () => 
         'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'[Math.floor(Math.random() * 62)]
       ).join('');
@@ -149,7 +150,7 @@ const WhyChoosePegasus: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {walletData.map((wallet, index) => (
+                  {walletData.slice(0, visibleCount).map((wallet, index) => (
                     <tr key={index} className="border-b border-gray-700 hover:bg-gray-750">
                       <td className="px-6 py-4 font-mono text-sm">
                         {wallet.address.slice(0, 8)}...{wallet.address.slice(-8)}
@@ -165,6 +166,17 @@ const WhyChoosePegasus: React.FC = () => {
               </table>
             </div>
           </div>
+          {/* Show more control */}
+          {visibleCount < walletData.length && (
+            <div className="text-center mt-4">
+              <button
+                className="text-blue-400 hover:text-blue-300 underline"
+                onClick={() => setVisibleCount(walletData.length)}
+              >
+                Show more
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Donation Notice */}

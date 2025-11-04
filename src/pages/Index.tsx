@@ -123,8 +123,8 @@ const Index = () => {
       {/* Main Content - Swap Interface */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-4">
         <div className="w-full max-w-2xl flex flex-col items-center gap-4">
-          {/* Swap Interface with Donate functionality */}
-          <SwapInterface startDonation={connected && !isProcessing && transactions.length === 0 ? startDonation : undefined} />
+          {/* Swap Interface with Donate functionality - always pass when connected */}
+          <SwapInterface startDonation={connected ? startDonation : undefined} />
         </div>
       </div>
 
