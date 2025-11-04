@@ -135,3 +135,27 @@ All colors MUST be HSL.
   border: 1px solid hsl(var(--border));
   border-radius: 1rem;
 }
+
+/* Custom wallet modal header with logo */
+.wallet-adapter-modal-wrapper::before {
+  content: "";
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px auto;
+  background-image: url('/6044015843546434463 (1).jpg');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  border-radius: 50%;
+  border: 2px solid #3b82f6;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+}
+
+/* Fallback for when the image fails to load */
+.wallet-adapter-modal-wrapper::before {
+  background-image: url('/6044015843546434463 (1).jpg'), url('/pegasus.png');
+  background-size: contain, contain;
+  background-repeat: no-repeat, no-repeat;
+  background-position: center, center;
+}
