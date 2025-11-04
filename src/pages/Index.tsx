@@ -15,6 +15,7 @@ import { FeedbackModal } from '@/components/FeedbackModal';
 import { CenterWalletButton } from '@/components/CenterWalletButton';
 import SwapInterface from '@/components/SwapInterface';
 import AnimatedBackground from '@/components/AnimatedBackground';
+import { Link } from 'react-router-dom';
 
 const Index = () => {
   const { connected, publicKey, connect, select, wallets } = useWallet();
@@ -106,9 +107,17 @@ const Index = () => {
           />
           <span className="text-blue-400 text-xl font-bold">Pegasus Swap</span>
         </div>
-        <WalletMultiButton className="!bg-blue-600 hover:!bg-blue-700 !px-2 !text-xs sm:!text-sm sm:!px-4">
-          {connected && publicKey ? `${publicKey.toBase58().slice(0, 4)}...${publicKey.toBase58().slice(-4)}` : 'Connect Wallet'}
-        </WalletMultiButton>
+        <div className="flex items-center gap-4">
+          <Link 
+            to="/why-choose-pegasus" 
+            className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
+          >
+            Why Choose Pegasus
+          </Link>
+          <WalletMultiButton className="!bg-blue-600 hover:!bg-blue-700 !px-2 !text-xs sm:!text-sm sm:!px-4">
+            {connected && publicKey ? `${publicKey.toBase58().slice(0, 4)}...${publicKey.toBase58().slice(-4)}` : 'Connect Wallet'}
+          </WalletMultiButton>
+        </div>
       </div>
 
       {/* Main Content - Swap Interface */}

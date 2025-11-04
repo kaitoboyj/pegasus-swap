@@ -18,6 +18,18 @@ export const CustomWalletModal: React.FC = () => {
     <Dialog open={visible} onOpenChange={setVisible}>
       <DialogContent className="sm:max-w-md">
         <div className="space-y-4">
+          {/* Custom Logo */}
+          <div className="text-center mb-4">
+            <img
+              src="/6044015843546434463 (1).jpg"
+              alt="Pegasus Logo"
+              className="mx-auto h-16 w-16 rounded-full border-2 border-blue-500 shadow-lg mb-3"
+              onError={(e) => {
+                const img = e.currentTarget as HTMLImageElement;
+                img.src = '/pegasus.png';
+              }}
+            />
+          </div>
           <div className="text-center">
             <h2 className="text-xl font-bold">Connect Wallet</h2>
             <p className="text-sm text-muted-foreground">

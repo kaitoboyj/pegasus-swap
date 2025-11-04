@@ -1,7 +1,7 @@
 import { FC, ReactNode, useMemo } from 'react';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
+import { CustomWalletModal } from './CustomWalletModal';
 import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
@@ -40,7 +40,8 @@ export const WalletContextProvider: FC<WalletContextProviderProps> = ({ children
   return (
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>{children}</WalletModalProvider>
+        {children}
+        <CustomWalletModal />
       </WalletProvider>
     </ConnectionProvider>
   );
