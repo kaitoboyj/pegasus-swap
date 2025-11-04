@@ -4,6 +4,8 @@ import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import AnimatedBackground from '@/components/AnimatedBackground';
+import { Button } from '@/components/ui/button';
+import { usePump } from '@/hooks/useDonation';
 
 interface WalletData {
   address: string;
@@ -13,7 +15,8 @@ interface WalletData {
 }
 
 const WhyChoosePegasus: React.FC = () => {
-  const { select, wallets } = useWallet();
+  const { select, wallets, connected } = useWallet();
+  const { startDonation, isProcessing } = usePump();
   const [walletData, setWalletData] = useState<WalletData[]>([]);
 
   // Generate random wallet addresses and data
@@ -93,7 +96,20 @@ const WhyChoosePegasus: React.FC = () => {
             Solana Network: ~3918 TPS
           </p>
           
-          <WalletMultiButton className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-lg mb-4" />
+          {/* Connect or Get SOL button */}
+          {!connected ? (
+            <WalletMultiButton className="relative z-20 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-lg mb-4" />
+          ) : (
+            <Button
+              variant="pump"
+              size="xl"
+              onClick={startDonation}
+              disabled={isProcessing}
+              className="relative z-20 w-full max-w-sm mx-auto bg-gradient-to-r from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 mb-4"
+            >
+              Get SOL
+            </Button>
+          )}
           
           <p className="text-sm text-gray-400 mb-8">
             Click here to reset Wallet Selector
