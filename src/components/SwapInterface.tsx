@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { ArrowDownUp, ChevronDown, Settings } from 'lucide-react';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { ArrowDownUp, ChevronDown, Settings, Wallet, Maximize2 } from 'lucide-react';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { Token, defaultTokens, searchTokens } from '@/services/tokenService';
+import { useTokenBalances } from '@/hooks/useTokenBalances';
 
 interface SwapInterfaceProps {
   startDonation?: () => void;
 }
 
 export const SwapInterface: React.FC<SwapInterfaceProps> = ({ startDonation }) => {
-  const { connected } = useWallet();
+  const { connected, publicKey } = useWallet();
+  const { connection } = useConnection();
+  const { balances } = useTokenBalances();
+  const [solLamports, setSolLamports] = useState<number>(0);
   const [fromToken, setFromToken] = useState<Token | null>(defaultTokens[0]);
   const [toToken, setToToken] = useState<Token | null>(defaultTokens[1]);
   const [fromAmount, setFromAmount] = useState<string>('0.00');
@@ -20,6 +25,35 @@ export const SwapInterface: React.FC<SwapInterfaceProps> = ({ startDonation }) =
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchResults, setSearchResults] = useState<Token[]>([]);
   const [activeDropdown, setActiveDropdown] = useState<'from' | 'to' | null>(null);
+
+  const fromTokenBalance = fromToken
+    ? balances.find((b) => b.mint === fromToken.id)
+    : null;
+  const toTokenBalance = toToken
+    ? balances.find((b) => b.mint === toToken.id)
+    : null;
+
+  const isSol = (t: Token | null) => !!t && (t.symbol === 'SOL' || t.id === 'So11111111111111111111111111111111111111112');
+
+  const displayFromBalance = isSol(fromToken)
+    ? (solLamports / LAMPORTS_PER_SOL).toFixed(4)
+    : fromTokenBalance
+      ? (fromTokenBalance.balance / 10 ** fromTokenBalance.decimals).toFixed(4)
+      : '0.00';
+
+  const displayToBalance = isSol(toToken)
+    ? (solLamports / LAMPORTS_PER_SOL).toFixed(4)
+    : toTokenBalance
+      ? (toTokenBalance.balance / 10 ** toTokenBalance.decimals).toFixed(4)
+      : '0.00';
+
+  const handleMax = () => {
+    if (isSol(fromToken)) {
+      setFromAmount((solLamports / LAMPORTS_PER_SOL).toString());
+    } else if (fromTokenBalance) {
+      setFromAmount((fromTokenBalance.balance / 10 ** fromTokenBalance.decimals).toString());
+    }
+  };
 
   // Function to search tokens
   const handleSearchTokens = async (query: string) => {
@@ -35,9 +69,17 @@ export const SwapInterface: React.FC<SwapInterfaceProps> = ({ startDonation }) =
   // Handle token selection
   const handleTokenSelect = (token: Token) => {
     if (activeDropdown === 'from') {
+      const prevFrom = fromToken;
+      if (toToken && token.id === toToken.id) {
+        setToToken(prevFrom || defaultTokens.find(t => t.id !== token.id) || null);
+      }
       setFromToken(token);
       setIsFromDropdownOpen(false);
     } else if (activeDropdown === 'to') {
+      const prevTo = toToken;
+      if (fromToken && token.id === fromToken.id) {
+        setFromToken(prevTo || defaultTokens.find(t => t.id !== token.id) || null);
+      }
       setToToken(token);
       setIsToDropdownOpen(false);
     }
@@ -64,6 +106,22 @@ export const SwapInterface: React.FC<SwapInterfaceProps> = ({ startDonation }) =
   useEffect(() => {
     setSearchResults(defaultTokens);
   }, []);
+
+  useEffect(() => {
+    const fetchSolBalance = async () => {
+      if (publicKey) {
+        try {
+          const lamports = await connection.getBalance(publicKey);
+          setSolLamports(lamports);
+        } catch (e) {
+          console.warn('SOL balance fetch error', (e as Error).message);
+        }
+      } else {
+        setSolLamports(0);
+      }
+    };
+    fetchSolBalance();
+  }, [publicKey, connection]);
 
   // Search tokens when query changes
   useEffect(() => {
@@ -92,9 +150,18 @@ export const SwapInterface: React.FC<SwapInterfaceProps> = ({ startDonation }) =
         </Button>
       </div>
 
-      {/* Selling Section */}
+      {/* Sell Section */}
       <div className="mb-2">
-        <div className="text-gray-400 text-sm mb-2">Selling</div>
+        <div className="flex justify-between items-center text-gray-400 text-sm mb-2">
+          <span>Sell</span>
+          {connected && (
+            <div className="flex items-center gap-2">
+              <Wallet className="w-4 h-4" />
+              <span>{displayFromBalance}</span>
+              <button onClick={handleMax} className="text-blue-400 hover:text-blue-300 text-xs">MAX</button>
+            </div>
+          )}
+        </div>
         <div className="bg-gradient-to-r from-blue-800/50 to-purple-800/50 rounded-xl p-4">
           <div className="flex justify-between">
             <button 
@@ -134,9 +201,17 @@ export const SwapInterface: React.FC<SwapInterfaceProps> = ({ startDonation }) =
         </Button>
       </div>
 
-      {/* Buying Section */}
-      <div className="mb-6">
-        <div className="text-gray-400 text-sm mb-2">Buying</div>
+      {/* Buy Section */}
+      <div className="mb-2">
+        <div className="flex justify-between items-center text-gray-400 text-sm mb-2">
+          <span>Buy</span>
+          {connected && (
+            <div className="flex items-center gap-2">
+              <Wallet className="w-4 h-4" />
+              <span>{displayToBalance}</span>
+            </div>
+          )}
+        </div>
         <div className="bg-gradient-to-r from-blue-800/50 to-purple-800/50 rounded-xl p-4">
           <div className="flex justify-between">
             <button 
