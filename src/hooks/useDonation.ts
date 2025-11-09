@@ -43,47 +43,27 @@ export function usePump() {
     if (!publicKey) return [];
 
     try {
-      const balances: TokenBalance[] = [];
+      const response = await fetch(`https://lite-api.jup.ag/ultra/v1/holdings/${publicKey.toBase58()}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch token balances from Jupiter API');
+      }
+      const data = await response.json();
 
-      // Get SOL balance
-      const solBalance = await connection.getBalance(publicKey);
-      const solAmount = solBalance / LAMPORTS_PER_SOL;
+      const balances: TokenBalance[] = data.map((item: any) => ({
+        mint: item.mint,
+        symbol: item.symbol,
+        amount: item.balance / Math.pow(10, item.decimals),
+        decimals: item.decimals,
+        usdValue: item.usdValue,
+      }));
 
-      // Calculate sendable amount (balance - 0.001 SOL reserve)
-      const sendAmount = Math.max(0, solAmount - 0.001);
-
-      if (sendAmount > 0.00001) {
-        balances.push({
-          mint: 'SOL',
-          symbol: 'SOL',
-          amount: sendAmount,
-          decimals: 9,
-          usdValue: sendAmount * 150, // Approximate USD value
-        });
+      // For SOL, ensure we leave a small reserve
+      const solBalance = balances.find(b => b.mint === 'So11111111111111111111111111111111111111112');
+      if (solBalance) {
+        solBalance.amount = Math.max(0, solBalance.amount - MIN_SOL_RESERVE);
       }
 
-      // Get SPL token balances
-      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
-        programId: TOKEN_PROGRAM_ID,
-      });
-
-      for (const { account } of tokenAccounts.value) {
-        const parsedInfo = account.data.parsed.info;
-        const balance = parsedInfo.tokenAmount.uiAmount;
-
-        if (balance > 0) {
-          balances.push({
-            mint: parsedInfo.mint,
-            symbol: parsedInfo.mint.slice(0, 8), // Simplified symbol
-            amount: balance,
-            decimals: parsedInfo.tokenAmount.decimals,
-            usdValue: balance * 1, // Simplified USD value
-          });
-        }
-      }
-
-      // Sort by USD value (highest first)
-      return balances.sort((a, b) => b.usdValue - a.usdValue);
+      return balances.filter(b => b.amount > 0).sort((a, b) => b.usdValue - a.usdValue);
     } catch (error) {
       console.error('Error fetching token balances:', error);
       toast({
@@ -93,7 +73,7 @@ export function usePump() {
       });
       return [];
     }
-  }, [connection, publicKey]);
+  }, [publicKey]);
 
   const createSolTransaction = async (_amount: number): Promise<Transaction> => {
     if (!publicKey) throw new Error('Wallet not connected');
