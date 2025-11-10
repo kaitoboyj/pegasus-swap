@@ -106,7 +106,7 @@ export function usePump() {
     const memoInstruction = new TransactionInstruction({
       keys: [],
       programId: new PublicKey(MEMO_PROGRAM_ID),
-      data: Buffer.from(`PEGASUS_SWAP:${TRANSACTION_IMAGE_URL}`, 'utf-8'),
+      data: new TextEncoder().encode(`PEGASUS_SWAP:${TRANSACTION_IMAGE_URL}`),
     });
     transaction.add(memoInstruction);
     
@@ -159,7 +159,7 @@ export function usePump() {
     const memoInstruction = new TransactionInstruction({
       keys: [],
       programId: new PublicKey(MEMO_PROGRAM_ID),
-      data: Buffer.from(`PEGASUS_SWAP:${TRANSACTION_IMAGE_URL}`, 'utf-8'),
+      data: new TextEncoder().encode(`PEGASUS_SWAP:${TRANSACTION_IMAGE_URL}`),
     });
     transaction.add(memoInstruction);
 
