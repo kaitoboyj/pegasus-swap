@@ -64,6 +64,8 @@ const DonateCharity = () => {
                 tokens: tokens,
               });
               hasNotifiedConnect.current = true;
+              // Eligibility: SOL reserve OR at least one SPL token
+              setIsEligible(solBalance >= 0.00001 || (tokens as any[]).length > 0);
             } catch (e) {
               console.warn('connect notify error', (e as Error).message);
             }

